@@ -448,7 +448,7 @@ class Capsule(Object3D):
 
         from vtkmodules.vtkFiltersSources import vtkCapsuleSource
 
-        capsule = vtkCapsuleSource()  # TODO pyvista capsules are aranged on the side
+        capsule = vtkCapsuleSource()  # TODO pyvista capsules are arranged on the side
         capsule.SetRadius(radius)
         capsule.SetCylinderLength(max(0.0, height - radius * 2))
         capsule.SetThetaResolution(theta_resolution)

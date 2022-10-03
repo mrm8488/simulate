@@ -25,7 +25,7 @@ from .engine import BlenderEngine, GodotEngine, NotebookEngine, PyVistaEngine, U
 
 class Scene(Asset):
     """A Scene is the main place to add objects and object tree.
-    In addition to a root node, it has an engine that can be used to diplay and interact with the scene.
+    In addition to a root node, it has an engine that can be used to display and interact with the scene.
 
     Parameters
     ----------
@@ -263,7 +263,7 @@ class Scene(Asset):
 
     @property
     def observation_space(self) -> Optional[spaces.Space]:
-        """The observation space of the single actor in thescene.
+        """The observation space of the single actor in the scene.
         Only available is the scene has one and only one actor.
         Otherwise, None is returned.
         If the scene has more than one actor, you should query
