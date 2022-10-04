@@ -44,11 +44,16 @@ class RLEnv(VecEnv):
     https://stable-baselines3.readthedocs.io/en/master/guide/vec_envs.html
 
     Args:
-        scene_or_map_fn: a Simulate Scene or a generator function for generating instances of the desired environment.
-        n_maps: the number of map instances to create, default 1.
-        n_show: optionally show a subset of the maps during training and dequeue a new map at the end of each episode.
-        time_step: the physics timestep of the environment.
-        frame_skip: the number of times an action is repeated in the backend simulation before the next observation is returned.
+        scene_or_map_fn (`Callable` or `Scene`):
+            A Simulate Scene or a generator function for generating instances of the desired environment.
+        n_maps (`int`, *optional*, defaults to `1`):
+            The number of map instances to create.
+        n_show (`int`, *optional*, defaults to `1`):
+            Optionally show a subset of the maps during training and dequeue a new map at the end of each episode.
+        time_step (`float`, *optional*, defaults to `1/30.0`):
+            The physics timestep of the environment.
+        frame_skip (`int`, *optional*, defaults to `4`):
+            The number of times an action is repeated in the backend simulation before the next observation is returned.
     """
 
     def __init__(
@@ -114,20 +119,34 @@ class RLEnv(VecEnv):
         """
         The step function for the environment, follows the API from OpenAI Gym.
 
+        TODO verify, a dict with actuator tags as keys and as values a Tensor of shape (n_show, n_actors, n_actions)
         Args:
-            action (`Dict` or `List`): TODO verify, a dict with actuator tags as keys and as values a Tensor of shape (n_show, n_actors, n_actions)
+            action (`Dict` or `List`):
+                The action to be taken by the environment.
 
         Returns:
-            observation (`Dict`): TODO
-            reward (`float`): TODO
-            done (`bool`): TODO
-            info: TODO
+            observation (`Dict`):
+                A dictionary of observations from the environment.
+            reward (`float`):
+                The reward for the action.
+            done (`bool`):
+                Whether the episode has ended.
+            info (`Dict`):
+                A dictionary of additional information.
         """
 
         self.step_send_async(action=action)
         return self.step_recv_async()
 
     def step_send_async(self, action: Union[Dict, List, np.ndarray]):
+        """
+        Send action for execution asynchronously.
+
+        Args:
+            action (`Dict` or `List` or `ndarray`):
+                The action to be executed in the environment.
+        """
+
         if not isinstance(action, dict):
             if len(self.action_tags) != 1:
                 raise ValueError(
@@ -168,6 +187,20 @@ class RLEnv(VecEnv):
         self.scene.engine.step_send_async(action=action)
 
     def step_recv_async(self) -> Tuple[Dict, np.ndarray, np.ndarray, List[Dict]]:
+        """
+        Receive the response from the environment asynchronously.
+
+        Returns:
+            observation (`Dict`):
+                A dictionary containing the observation from the environment.
+            reward (`float`):
+                The reward for the action.
+            done (`bool`):
+                Whether the episode has ended.
+            info (`Dict`):
+                A dictionary of additional information.
+        """
+
         event = self.scene.engine.step_recv_async()
 
         # Extract observations, reward, and done from event data
@@ -181,6 +214,16 @@ class RLEnv(VecEnv):
         return obs, reward, done, [{}] * len(done)
 
     def _squeeze_actor_dimension(self, obs: Dict) -> Dict:
+        """
+        Squeeze the observations.
+
+        Args:
+            obs (`Dict`): The observation received from the environment.
+
+        Returns:
+            obs (`Dict`): Squeezed observation.
+        """
+
         for k, v in obs.items():
             obs[k] = obs[k].reshape((self.n_show * self.n_actors_per_map, *obs[k].shape[2:]))
         return obs
@@ -192,6 +235,7 @@ class RLEnv(VecEnv):
         Returns:
             obs (`Dict`): the observation of the environment after reset.
         """
+
         self.scene.reset()
 
         # To extract observations, we do a "fake" step (no actual simulation with frame_skip=0)
@@ -202,6 +246,16 @@ class RLEnv(VecEnv):
 
     @staticmethod
     def _convert_to_numpy(event_data: Dict) -> np.ndarray:
+        """
+        Convert the event data to numpy array.
+
+        Args:
+            event_data (`Dict`): The event data to be converted.
+
+        Returns:
+            event_data (`ndarray`): The converted event data.
+        """
+
         if event_data["type"] == "uint8":
             shape = event_data["shape"]
             return np.array(event_data["uintBuffer"], dtype=np.uint8).reshape(shape)
@@ -212,21 +266,34 @@ class RLEnv(VecEnv):
             raise TypeError
 
     def _extract_sensor_obs(self, sim_event_data: Dict) -> Dict:
+        """
+        Extract the observations from the event data.
+
+        Args:
+            sim_event_data (`Dict`): The full event data.
+
+        Returns:
+            sensor_obs (`Dict`): The sensors observation
+        """
+
         sensor_obs = {}
         for sensor_tag, sensor_data in sim_event_data.items():
             sensor_obs[sensor_tag] = self._convert_to_numpy(sensor_data)
         return sensor_obs
 
     def close(self):
+        """Close the scene."""
         self.scene.close()
 
     def sample_action(self) -> np.ndarray:
         """
-        Samples an action from the actors in the environment. This function loads the configuration of maps and actors to return the correct shape across multiple configurations.
+        Samples an action from the actors in the environment. This function loads the configuration of maps and actors
+        to return the correct shape across multiple configurations.
 
         Returns:
-            action: TODO
+            action (`ndarray`): action sampled from the environment's action space.
         """
+
         if self.n_actors_per_map > 1:
             raise NotImplementedError("TODO: add sampling mechanism for multi-agent spaces.")
         else:
@@ -234,14 +301,17 @@ class RLEnv(VecEnv):
         return np.array(action)
 
     def env_is_wrapped(self, wrapper_class: Type[gym.Wrapper], indices: Optional[VecEnvIndices] = None) -> List[bool]:
+        """Returns if environment is wrapped."""
         return [False] * self.n_agents * self.n_parallel
 
     # required abstract methods
 
     def step_async(self, actions: np.ndarray) -> None:
+        """Step the environment asynchronously."""
         raise NotImplementedError()
 
     def get_attr(self, attr_name: str, indices: VecEnvIndices = None) -> List[Any]:
+        """Return a class attribute by name."""
         raise NotImplementedError()
 
     def env_method(self, method_name: str, *method_args, indices: VecEnvIndices = None, **method_kwargs) -> List[Any]:
