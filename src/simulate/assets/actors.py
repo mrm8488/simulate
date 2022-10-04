@@ -186,7 +186,7 @@ class EgocentricCameraActor(Capsule):
         children = self.tree_children
         self.tree_children = children + (camera,)
 
-        # Add our physics component (by default the actor can only rotation along y axis)
+        # Add our physics component (by default the actor can only rotation along y-axis)
         self.physics_component.mass = mass
         self.physics_component.constraints = ["freeze_rotation_x", "freeze_rotation_z", "freeze_position_y"]
 

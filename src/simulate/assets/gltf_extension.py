@@ -123,7 +123,7 @@ class GltfExtensionMixin(DataClassJsonMixin):
         (e.g. at importation from GLTF or during the GLTF conversion to replace node pointers with string names)
 
         We then want to deep copy only the fields of the dataclass, thus we don't
-        use copy.deepcpy since some other properties (renderer, etc.) are not picklable
+        use copy.deepcopy since some other properties (renderer, etc.) are not picklable
         """
         self_dict = {f.name: copy.deepcopy(getattr(self, f.name)) for f in fields(self)}
         copy_self = type(self)(**self_dict)

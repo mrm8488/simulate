@@ -39,7 +39,7 @@ VIEWER_TEMPLATE = os.path.join(os.path.dirname(__file__), "viewer.zip")
 
 def in_notebook() -> bool:
     """
-    Check to see if we are in an IPython or Jypyter notebook.
+    Check to see if we are in an IPython or Jupyter notebook.
 
     Returns
     -----------
@@ -86,7 +86,7 @@ def wrap_as_stream(item: Union[bytes, str]) -> Union[BytesIO, StringIO]:
         return StringIO(item)
     elif isinstance(item, bytes):
         return BytesIO(item)
-    raise ValueError(f"{type(item).__name__} is not wrappable!")
+    raise ValueError(f"{type(item).__name__} cannot be wrapped!")
 
 
 def decompress(file_obj: Any, file_type: str) -> Dict:
@@ -154,7 +154,7 @@ class NotebookEngine(Engine):
 
         # escape the quotes in the HTML
         srcdoc = as_html.replace('"', "&quot;")
-        # embed this puppy as the srcdoc attr of an IFframe
+        # embed this puppy as the srcdoc attr of an IFrame
         # I tried this a dozen ways and this is the only one that works
         # display.IFrame/display.Javascript really, really don't work
         # div is to avoid IPython's pointless hardcoded warning

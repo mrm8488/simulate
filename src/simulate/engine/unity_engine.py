@@ -119,7 +119,7 @@ class UnityEngine(Engine):
         raise RuntimeError("Could not find a free port")
 
     def _initialize_server(self, engine_exe: str, engine_host: str, engine_port: int, engine_headless: bool):
-        """Initialize the locak server and launch the Unity executable and
+        """Initialize the local server and launch the Unity executable and
         connect to it.
         """
         # Initializing on our side
