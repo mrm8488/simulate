@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# Lint as: python3
 from collections import defaultdict
-from typing import Any, Callable, List, Optional, Sequence, Type
+from typing import Any, Callable, List, Optional, Sequence, Type, Tuple, Dict
 
 import gym
 import numpy as np
@@ -32,14 +33,18 @@ except ImportError:
 
 class ParallelRLEnv(VecEnv):
     """
-    Parallel RL environment wrapper for Simulate scene. Spawns multiple backend executables to run in parallel, in addition to the optionality of multiple maps.
+    Parallel RL environment wrapper for Simulate scene. Spawns multiple backend executables to run in parallel,
+    in addition to the optionality of multiple maps.
     Uses functionality from the VecEnv in stable baselines 3. For more information on VecEnv, see the source
     https://stable-baselines3.readthedocs.io/en/master/guide/vec_envs.html
 
     Args:
-        env_fn (`Callable`): a generator function that returns a RLEnv for generating instances of the desired environment.
-        n_parallel (`int`): the number of executable instances to create.
-        starting_port (`int): initial communication port for spawned executables.
+        env_fn (`Callable`):
+            a generator function that returns a RLEnv for generating instances of the desired environment.
+        n_parallel (`int`):
+            the number of executable instances to create.
+        starting_port (`int`, *optional*, defaults to `55001`):
+            initial communication port for spawned executables.
     """
 
     def __init__(self, env_fn: Callable, n_parallel: int, starting_port: int = 55001):
@@ -59,18 +64,24 @@ class ParallelRLEnv(VecEnv):
         num_envs = self.n_show * self.n_parallel
         super().__init__(num_envs, observation_space, action_space)
 
-    def step(self, actions: Optional[np.array] = None):
+    def step(self, actions: Optional[np.array] = None) -> Tuple[Dict, np.ndarray, np.ndarray, List[Dict]]:
         """
         The step function for the environment, follows the API from OpenAI Gym.
 
+        TODO verify, a dict with actuator tags as keys and as values a Tensor of shape (n_show, n_actors, n_actions)
         Args:
-            actions (`Dict` or `List`): TODO verify, a dict with actuator tags as keys and as values a Tensor of shape (n_show, n_actors, n_actions)
+            actions (`Dict` or `List`):
+                a dict or list of actions for each actuator.
 
         Returns:
-            all_observation (`Dict`): TODO
-            all_reward (`float`): TODO
-            all_done (`bool`): TODO
-            all_info: TODO
+            all_observation (`List[Dict]`):
+                a list of dict of observations for each sensor.
+            all_reward (`List[float]`):
+                all the rewards for the current step.
+            all_done (`List[bool]`):
+                whether each episode is done.
+            all_info (`List[Dict]`):
+                a list of dict of additional information.
         """
         for i in range(self.n_parallel):
             # TODO comment what is going on here
@@ -97,7 +108,16 @@ class ParallelRLEnv(VecEnv):
         return all_obs, all_reward, all_done, all_info
 
     @staticmethod
-    def _combine_obs(obs):
+    def _combine_obs(obs) -> Dict:
+        """
+        Combines the observations from the different environments into a single observation.
+
+        Args:
+            obs (`List[Dict]`): a list of dict of observations for each sensor.
+
+        Returns:
+            all_obs (`Dict`): a dict of observations for all sensors.
+        """
         out = defaultdict(list)
         np_out = defaultdict(np.ndarray)
 
@@ -111,6 +131,12 @@ class ParallelRLEnv(VecEnv):
         return np_out
 
     def reset(self):
+        """
+        Resets the environment.
+
+        Returns:
+            all_obs (`Dict`): a dict of observations for all sensors when the environment resets.
+        """
         # we aren't performing this async as this happens rarely as the env auto resets
         all_obs = []
         for i in range(self.n_parallel):
@@ -121,10 +147,12 @@ class ParallelRLEnv(VecEnv):
         return all_obs
 
     def close(self):
+        """Close the environment."""
         for env in self.envs:
             env.scene.close()
 
     def env_is_wrapped(self, wrapper_class: Type[gym.Wrapper], indices: VecEnvIndices = None) -> List[bool]:
+        """Check if the environment is wrapped."""
         return [False] * self.n_show * self.n_parallel
 
     # required abstract methods

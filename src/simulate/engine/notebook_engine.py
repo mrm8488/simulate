@@ -23,7 +23,7 @@ import os
 import typing
 import zipfile
 from io import BytesIO, StringIO
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, Optional, Union, IO
 
 from ..utils import logging
 from .engine import Engine
@@ -41,10 +41,8 @@ def in_notebook() -> bool:
     """
     Check to see if we are in an IPython or Jupyter notebook.
 
-    Returns
-    -----------
-    in_notebook : bool
-      Returns True if we are in a notebook
+    Returns:
+        in_notebook (`bool`): Returns True if we are in a notebook.
     """
     try:
         # function returns IPython context, but only in IPython
@@ -72,15 +70,11 @@ def wrap_as_stream(item: Union[bytes, str]) -> Union[BytesIO, StringIO]:
     """
     Wrap a string or bytes object as a file object.
 
-    Parameters
-    ------------
-    item: str or bytes
-      Item to be wrapped
+    Args:
+        item (`str` or `bytes`): Item to be wrapped.
 
-    Returns
-    ---------
-    wrapped : file-like object
-      Contains data from item
+    Returns:
+        wrapped (`StringIO` or `BytesIO`): Contains data from item
     """
     if isinstance(item, str):
         return StringIO(item)
@@ -89,24 +83,20 @@ def wrap_as_stream(item: Union[bytes, str]) -> Union[BytesIO, StringIO]:
     raise ValueError(f"{type(item).__name__} cannot be wrapped!")
 
 
-def decompress(file_obj: Any, file_type: str) -> Dict:
+def decompress(file_obj: IO, file_type: str) -> Dict:
     """
     Given an open file object and a file type, return all components
     of the archive as open file objects in a dict.
 
-    Parameters
-    ------------
-    file_obj : file-like
-      Containing compressed data
-    file_type : str
-      File extension, 'zip', 'tar.gz', etc
+    Args:
+        file_obj (`file-like`):
+            Containing compressed data
+        file_type (`str`):
+            File extension, 'zip', 'tar.gz', etc
 
-    Returns
-    ---------
-    decompressed : dict
-      Data from archive in format {file name : file-like}
+    Returns:
+        decompressed (`Dict`): Data from archive in format {file name : file-like}
     """
-
     def is_zip():
         archive = zipfile.ZipFile(file_obj)
         result = {name: wrap_as_stream(archive.read(name)) for name in archive.namelist()}
@@ -131,6 +121,16 @@ def decompress(file_obj: Any, file_type: str) -> Dict:
 
 
 class NotebookEngine(Engine):
+    """
+    API to run simulations in Notebooks.
+
+    Args:
+        scene (`Scene`):
+            The scene to simulate.
+        auto_update (`bool`, *optional*, defaults to `True`):
+            Whether to automatically update the scene when an asset is updated.
+    """
+
     def __init__(
         self,
         scene: "Scene",
@@ -141,7 +141,14 @@ class NotebookEngine(Engine):
         with open(VIEWER_TEMPLATE, "rb") as f:
             self._template = decompress(f, file_type="zip")["viewer.html.template"].read().decode("utf-8")
 
-    def show(self, height: Optional[int] = 500, **plotter_kwargs):
+    def show(self, height: Optional[int] = 500, **plotter_kwargs) -> Any:
+        """
+        Show the scene in a notebook.
+
+        Args:
+            height (`int`, *optional*, defaults to `500`):
+                The height of the viewer.
+        """
         # keep as soft dependency
         from IPython import display
 

@@ -11,6 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
+# Lint as: python3
 from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, Union
 
 import gym
@@ -134,7 +136,6 @@ class RLEnv(VecEnv):
             info (`Dict`):
                 A dictionary of additional information.
         """
-
         self.step_send_async(action=action)
         return self.step_recv_async()
 
@@ -143,10 +144,8 @@ class RLEnv(VecEnv):
         Send action for execution asynchronously.
 
         Args:
-            action (`Dict` or `List` or `ndarray`):
-                The action to be executed in the environment.
+            action (`Dict` or `List` or `ndarray`): The action to be executed in the environment.
         """
-
         if not isinstance(action, dict):
             if len(self.action_tags) != 1:
                 raise ValueError(
@@ -200,7 +199,6 @@ class RLEnv(VecEnv):
             info (`Dict`):
                 A dictionary of additional information.
         """
-
         event = self.scene.engine.step_recv_async()
 
         # Extract observations, reward, and done from event data
@@ -223,7 +221,6 @@ class RLEnv(VecEnv):
         Returns:
             obs (`Dict`): Squeezed observation.
         """
-
         for k, v in obs.items():
             obs[k] = obs[k].reshape((self.n_show * self.n_actors_per_map, *obs[k].shape[2:]))
         return obs
@@ -235,7 +232,6 @@ class RLEnv(VecEnv):
         Returns:
             obs (`Dict`): the observation of the environment after reset.
         """
-
         self.scene.reset()
 
         # To extract observations, we do a "fake" step (no actual simulation with frame_skip=0)
@@ -255,7 +251,6 @@ class RLEnv(VecEnv):
         Returns:
             event_data (`ndarray`): The converted event data.
         """
-
         if event_data["type"] == "uint8":
             shape = event_data["shape"]
             return np.array(event_data["uintBuffer"], dtype=np.uint8).reshape(shape)
@@ -275,7 +270,6 @@ class RLEnv(VecEnv):
         Returns:
             sensor_obs (`Dict`): The sensors observation
         """
-
         sensor_obs = {}
         for sensor_tag, sensor_data in sim_event_data.items():
             sensor_obs[sensor_tag] = self._convert_to_numpy(sensor_data)
@@ -293,7 +287,6 @@ class RLEnv(VecEnv):
         Returns:
             action (`ndarray`): action sampled from the environment's action space.
         """
-
         if self.n_actors_per_map > 1:
             raise NotImplementedError("TODO: add sampling mechanism for multi-agent spaces.")
         else:
